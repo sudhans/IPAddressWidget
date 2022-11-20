@@ -3,12 +3,11 @@ package com.msd.appwidget.ip
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
-import android.content.ComponentName
-import android.content.Context
-import android.content.Intent
+import android.content.*
 import android.net.ConnectivityManager
 import android.net.wifi.WifiManager
 import android.widget.RemoteViews
+import android.widget.Toast
 
 /**
  * Implementation of App Widget functionality.
@@ -30,12 +29,31 @@ class IpAppWidgetProvider : AppWidgetProvider() {
                 }
             }
         } else if (INTENT_ACTION_AUTO_UPDATE == action) {
-            val appWidgetManager = AppWidgetManager.getInstance(context!!)
-            val componentName = ComponentName(context.packageName, javaClass.name)
-            val appWidgetIds = appWidgetManager.getAppWidgetIds(componentName)
-            if (appWidgetIds.isNotEmpty()) {
-                onUpdate(context!!, AppWidgetManager.getInstance(context), appWidgetIds)
+            context?.let {
+                getWidgetsAndUpdate(it)
             }
+
+        } else if (INTENT_ACTION_ON_CLICK == action) {
+            context?.let {
+                getWidgetsAndUpdate(it)
+                copyIpAddressToClipBoard(it)
+            }
+        }
+    }
+
+    private fun copyIpAddressToClipBoard(context: Context) {
+        val clipboardManager = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        val clipData = ClipData.newPlainText("ipAddress", getIpAddress(context))
+        clipboardManager.setPrimaryClip(clipData)
+        Toast.makeText(context, "Ip Address copied to clipboard", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun getWidgetsAndUpdate(context: Context) {
+        val appWidgetManager = AppWidgetManager.getInstance(context)
+        val componentName = ComponentName(context.packageName, javaClass.name)
+        val appWidgetIds = appWidgetManager.getAppWidgetIds(componentName)
+        if (appWidgetIds.isNotEmpty()) {
+            onUpdate(context, AppWidgetManager.getInstance(context), appWidgetIds)
         }
     }
 
@@ -87,7 +105,7 @@ internal fun updateAppWidget(
     // Construct the RemoteViews object
     val views = RemoteViews(context.packageName, R.layout.ip_app_widget_provider)
     views.setTextViewText(R.id.appwidget_text, widgetText)
-    views.setOnClickPendingIntent(R.id.appwidget_text, getPendingSelfIntent(context, INTENT_ACTION_AUTO_UPDATE))
+    views.setOnClickPendingIntent(R.id.appwidget_text, getPendingSelfIntent(context, INTENT_ACTION_ON_CLICK))
 
     // Instruct the widget manager to update the widget
     appWidgetManager.updateAppWidget(appWidgetId, views)
