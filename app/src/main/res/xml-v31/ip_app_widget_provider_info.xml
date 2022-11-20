@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:configure="com.msd.appwidget.ip.IpAppWidgetProviderConfigureActivity"
+    android:description="@string/app_widget_description"
+    android:initialKeyguardLayout="@layout/ip_app_widget_provider"
+    android:initialLayout="@layout/ip_app_widget_provider"
+    android:minWidth="160dp"
+    android:minHeight="50dp"
+    android:previewImage="@drawable/ic_ipappwidget_preview"
+    android:previewLayout="@layout/ip_app_widget_provider"
+    android:resizeMode="horizontal"
+    android:targetCellWidth="2"
+    android:targetCellHeight="1"
+    android:updatePeriodMillis="0"
+    android:widgetCategory="home_screen|keyguard" />
