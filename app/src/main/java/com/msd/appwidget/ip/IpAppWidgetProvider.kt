@@ -6,6 +6,7 @@ import android.appwidget.AppWidgetProvider
 import android.content.*
 import android.net.ConnectivityManager
 import android.net.wifi.WifiManager
+import android.util.Log
 import android.widget.RemoteViews
 import android.widget.Toast
 
@@ -19,7 +20,8 @@ class IpAppWidgetProvider : AppWidgetProvider() {
     override fun onReceive(context: Context?, intent: Intent?) {
         super.onReceive(context, intent)
         val action = intent!!.action
-        println("MSD:: Action $action")
+        Log.i(TAG, "Action $action")
+
         if (WifiManager.WIFI_STATE_CHANGED_ACTION == action) {
             val extras = intent.extras
             if (extras != null) {
@@ -42,7 +44,8 @@ class IpAppWidgetProvider : AppWidgetProvider() {
     }
 
     private fun copyIpAddressToClipBoard(context: Context) {
-        val clipboardManager = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        val clipboardManager =
+            context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
         val clipData = ClipData.newPlainText("ipAddress", getIpAddress(context))
         clipboardManager.setPrimaryClip(clipData)
         Toast.makeText(context, "Ip Address copied to clipboard", Toast.LENGTH_SHORT).show()
@@ -70,7 +73,7 @@ class IpAppWidgetProvider : AppWidgetProvider() {
 
     override fun onEnabled(context: Context?) {
         super.onEnabled(context)
-        println("MSD:: Widget Enabled")
+        Log.i(TAG, "Widget Enabled")
         context?.let {
             val appWidgetAlarm = AppWidgetAlarm(it.applicationContext)
             appWidgetAlarm.startAlarm()
@@ -80,7 +83,7 @@ class IpAppWidgetProvider : AppWidgetProvider() {
 
     override fun onDisabled(context: Context?) {
         super.onDisabled(context)
-        println("MSD:: Widget Disabled")
+        Log.i(TAG, "Widget Disabled")
         context?.let {
             val appWidgetManager = AppWidgetManager.getInstance(it)
             val componentName = ComponentName(it.packageName, javaClass.name)
@@ -99,26 +102,32 @@ internal fun updateAppWidget(
     appWidgetManager: AppWidgetManager,
     appWidgetId: Int
 ) {
-    println("MSD:: updateAppWidget")
+    Log.i(TAG, "updateAppWidget")
     val widgetText = getIpAddress(context)
-    println("MSD:: ipAddress is $widgetText")
+    Log.i(TAG, "ipAddress is $widgetText")
     // Construct the RemoteViews object
     val views = RemoteViews(context.packageName, R.layout.ip_app_widget_provider)
     views.setTextViewText(R.id.appwidget_text, widgetText)
-    views.setOnClickPendingIntent(R.id.appwidget_text, getPendingSelfIntent(context, INTENT_ACTION_ON_CLICK))
+    views.setOnClickPendingIntent(
+        R.id.appwidget_text,
+        getPendingSelfIntent(context, INTENT_ACTION_ON_CLICK)
+    )
 
     // Instruct the widget manager to update the widget
     appWidgetManager.updateAppWidget(appWidgetId, views)
 }
 
 internal fun getIpAddress(context: Context) = with(context.getConnectivityManager()) {
-    println("MSD:: Getting ipAddress")
+    Log.i(TAG, "Getting ipAddress")
     getLinkProperties(activeNetwork)?.let {
         if (it.linkAddresses.size > 1) {
-            println("MSD:: Host:: ${it.linkAddresses[1].address.hostAddress}")
-            it.linkAddresses[1].address.hostAddress ?: DEFAULT_IP_ADDRESS
+            Log.i(TAG, "LinkAddresses ${it.linkAddresses}")
+            it.linkAddresses.map { linkAddress -> linkAddress.address.hostAddress }
+                .firstOrNull { address ->
+                    address?.contains(".", true) ?: false
+                } ?: DEFAULT_IP_ADDRESS
         } else {
-            println("MSD:: linkAddresses less than one ${it.linkAddresses}")
+            Log.i(TAG, "linkAddresses less than one ${it.linkAddresses}")
             it.linkAddresses[0].address.hostAddress ?: DEFAULT_IP_ADDRESS
         }
     } ?: DEFAULT_IP_ADDRESS
@@ -130,6 +139,11 @@ internal fun Context.getConnectivityManager() =
 internal fun getPendingSelfIntent(context: Context, action: String): PendingIntent {
     val intent = Intent(context, IpAppWidgetProvider::class.java)
     intent.action = action
-    return PendingIntent.getBroadcast(context, ALARM_ID, intent, PendingIntent.FLAG_CANCEL_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+    return PendingIntent.getBroadcast(
+        context,
+        ALARM_ID,
+        intent,
+        PendingIntent.FLAG_CANCEL_CURRENT or PendingIntent.FLAG_IMMUTABLE
+    )
 
 }
