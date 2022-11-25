@@ -3,12 +3,17 @@ package com.msd.appwidget.ip
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
-import android.content.*
+import android.content.ComponentName
+import android.content.Context
+import android.content.Intent
 import android.net.ConnectivityManager
 import android.net.wifi.WifiManager
 import android.util.Log
 import android.widget.RemoteViews
-import android.widget.Toast
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkManager
+import java.util.concurrent.TimeUnit
 
 /**
  * Implementation of App Widget functionality.
@@ -38,17 +43,12 @@ class IpAppWidgetProvider : AppWidgetProvider() {
         } else if (INTENT_ACTION_ON_CLICK == action) {
             context?.let {
                 getWidgetsAndUpdate(it)
-                copyIpAddressToClipBoard(it)
+                // Launch Main Activity
+                val mainIntent = context.packageManager.getLaunchIntentForPackage(context.packageName)
+                mainIntent?.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                context.startActivity(mainIntent)
             }
         }
-    }
-
-    private fun copyIpAddressToClipBoard(context: Context) {
-        val clipboardManager =
-            context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-        val clipData = ClipData.newPlainText("ipAddress", getIpAddress(context))
-        clipboardManager.setPrimaryClip(clipData)
-        Toast.makeText(context, "Ip Address copied to clipboard", Toast.LENGTH_SHORT).show()
     }
 
     private fun getWidgetsAndUpdate(context: Context) {
@@ -75,8 +75,12 @@ class IpAppWidgetProvider : AppWidgetProvider() {
         super.onEnabled(context)
         Log.i(TAG, "Widget Enabled")
         context?.let {
-            val appWidgetAlarm = AppWidgetAlarm(it.applicationContext)
-            appWidgetAlarm.startAlarm()
+            val workRequest = PeriodicWorkRequestBuilder<UpdateWidgetWorker>(30, TimeUnit.SECONDS)
+                .build()
+
+            WorkManager.getInstance(context).enqueueUniquePeriodicWork("ipAddressWidgetUpdateWork", ExistingPeriodicWorkPolicy.KEEP, workRequest)
+
+
         }
 
     }
@@ -85,13 +89,7 @@ class IpAppWidgetProvider : AppWidgetProvider() {
         super.onDisabled(context)
         Log.i(TAG, "Widget Disabled")
         context?.let {
-            val appWidgetManager = AppWidgetManager.getInstance(it)
-            val componentName = ComponentName(it.packageName, javaClass.name)
-            val appWidgetIds = appWidgetManager.getAppWidgetIds(componentName)
-            if (appWidgetIds.isEmpty()) {
-                val appWidgetAlarm = AppWidgetAlarm(it.applicationContext)
-                appWidgetAlarm.stopAlarm()
-            }
+            WorkManager.getInstance(context).cancelUniqueWork("ipAddressWidgetUpdateWork")
         }
 
     }
@@ -122,16 +120,24 @@ internal fun getIpAddress(context: Context) = with(context.getConnectivityManage
     getLinkProperties(activeNetwork)?.let {
         if (it.linkAddresses.size > 1) {
             Log.i(TAG, "LinkAddresses ${it.linkAddresses}")
-            it.linkAddresses.map { linkAddress -> linkAddress.address.hostAddress }
-                .firstOrNull { address ->
+            val ipAddresses = it.linkAddresses.map { linkAddress -> linkAddress.address.hostAddress }
+                .filter { address ->
                     address?.contains(".", true) ?: false
-                } ?: DEFAULT_IP_ADDRESS
+                }
+
+           return if (ipAddresses.isEmpty()) {
+                DEFAULT_IP_ADDRESS
+            } else {
+                ipAddresses.joinToString(", \n")
+           }
         } else {
             Log.i(TAG, "linkAddresses less than one ${it.linkAddresses}")
             it.linkAddresses[0].address.hostAddress ?: DEFAULT_IP_ADDRESS
         }
     } ?: DEFAULT_IP_ADDRESS
 }
+
+
 
 internal fun Context.getConnectivityManager() =
     getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
@@ -146,4 +152,9 @@ internal fun getPendingSelfIntent(context: Context, action: String): PendingInte
         PendingIntent.FLAG_CANCEL_CURRENT or PendingIntent.FLAG_IMMUTABLE
     )
 
+}
+
+internal fun updateAppWidget(appContext: Context) {
+    val intent = Intent(INTENT_ACTION_AUTO_UPDATE, null, appContext, IpAppWidgetProvider::class.java)
+    appContext.sendBroadcast(intent)
 }

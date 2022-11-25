@@ -4,4 +4,5 @@
     <string name="configure">Configure</string>
     <string name="add_widget">Add widget</string>
     <string name="app_widget_description">This widget shows the current ip address</string>
+    <string name="title_activity_main">Your IP Info</string>
 </resources>

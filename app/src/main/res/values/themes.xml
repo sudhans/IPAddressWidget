@@ -16,4 +16,6 @@
         <!-- Apply padding to avoid the content of the widget colliding with the rounded corners -->
         <item name="appWidgetPadding">8dp</item>
     </style>
+
+    <style name="Theme.DeviceDefault.DayNight" parent="android:Theme.Material.Light.NoActionBar" />
 </resources>
