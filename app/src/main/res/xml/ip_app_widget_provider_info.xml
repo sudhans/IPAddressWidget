@@ -6,6 +6,6 @@
     android:minWidth="160dp"
     android:minHeight="50dp"
     android:previewImage="@drawable/ic_ipappwidget_preview"
-    android:resizeMode="horizontal"
+    android:resizeMode="horizontal|vertical"
     android:updatePeriodMillis="0"
     android:widgetCategory="home_screen|keyguard" />
