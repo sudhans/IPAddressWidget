@@ -43,6 +43,7 @@ class IpAppWidgetProvider : AppWidgetProvider() {
         } else if (INTENT_ACTION_ON_CLICK == action) {
             context?.let {
                 getWidgetsAndUpdate(it)
+
                 // Launch Main Activity
                 val mainIntent = context.packageManager.getLaunchIntentForPackage(context.packageName)
                 mainIntent?.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
