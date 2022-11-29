@@ -25,6 +25,7 @@ class MainApplication : Application() {
         .addTransportType(NetworkCapabilities.TRANSPORT_BLUETOOTH)
         .addTransportType(NetworkCapabilities.TRANSPORT_VPN)
         .build()
+
     private val networkCallback = object: ConnectivityManager.NetworkCallback() {
         override fun onAvailable(network: Network) {
             super.onAvailable(network)
@@ -35,6 +36,15 @@ class MainApplication : Application() {
         override fun onLost(network: Network) {
             super.onLost(network)
             Log.i(TAG, "Network Lost")
+            updateAppWidget(appContext)
+        }
+
+        override fun onCapabilitiesChanged(
+            network: Network,
+            networkCapabilities: NetworkCapabilities
+        ) {
+            super.onCapabilitiesChanged(network, networkCapabilities)
+            Log.i(TAG, "On Capabilities Changed")
             updateAppWidget(appContext)
         }
 
@@ -56,7 +66,6 @@ class MainApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         getConnectivityManager().registerNetworkCallback(networkRequest, networkCallback)
-
         val wifiStateChangedIntentFilter = IntentFilter(WifiManager.WIFI_STATE_CHANGED_ACTION)
         registerReceiver(wifiStateChangedBroadcastReceiver, wifiStateChangedIntentFilter)
     }

@@ -76,7 +76,7 @@ class IpAppWidgetProvider : AppWidgetProvider() {
         super.onEnabled(context)
         Log.i(TAG, "Widget Enabled")
         context?.let {
-            val workRequest = PeriodicWorkRequestBuilder<UpdateWidgetWorker>(30, TimeUnit.SECONDS)
+            val workRequest = PeriodicWorkRequestBuilder<UpdateWidgetWorker>(15, TimeUnit.MINUTES)
                 .build()
 
             WorkManager.getInstance(context).enqueueUniquePeriodicWork("ipAddressWidgetUpdateWork", ExistingPeriodicWorkPolicy.KEEP, workRequest)
