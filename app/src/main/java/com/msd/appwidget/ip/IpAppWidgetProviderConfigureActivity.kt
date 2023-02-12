@@ -39,7 +39,7 @@ class IpAppWidgetProviderConfigureActivity : Activity() {
         binding = IpAppWidgetProviderConfigureBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        appWidgetText = binding.appwidgetText as TextView
+        appWidgetText = binding.appwidgetText
         appWidgetText.text = getIpAddress(this)
         binding.addButton.setOnClickListener(onClickListener)
 
